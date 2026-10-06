@@ -98,10 +98,12 @@ Freight spot markets fluctuate over time due to seasonal demand and fuel/market 
 - **Final Retraining:** 100% of 48,000 development loads for final production inference.
 
 ### 2. Rate Per Mile (RPM) Target Formulation
-Instead of modeling total USD rate directly (which spans $57 to $25,533), we predict **Rate Per Mile (RPM = posted_rate / distance)** as the target:
-$$\text{RPM} = \frac{\text{posted\_rate}}{\text{distance}}$$
-$$\text{Predicted Rate} = \max(\text{Predicted RPM} \times \text{distance}, 1.0)$$
-This stabilizes target variance across short-haul and long-haul loads, preventing long-haul outliers from skewing model gradients.
+### 2. Rate Per Mile (RPM) Target Formulation
+Rate Per Mile (RPM) Target FormulationDirectly modeling the total USD rate introduces extreme target variance across short-haul and long-haul loads (spanning from $57 to $25,533). Predicting absolute rates causes long-haul trips to disproportionately dominate model loss gradients during training.To stabilize variance and ensure balanced learning across all trip distances, the target variable is normalized to Rate Per Mile (RPM).
+1. Training TransformationDuring model training, the target feature is transformed into per-mile rates:$$\text{RPM} = \frac{\text{posted\_rate}}{\text{distance}}$$
+2. Inference & Price ReconstructionAt inference time, the model predicts $\widehat{\text{RPM}}$. The total price is reconstructed using the trip distance, with a minimum price floor constraint of $1.00 applied:$$\text{Predicted Rate} = \max(\widehat{\text{RPM}} \times \text{distance},\ 1.0)$$Why
+
+
 
 ### 3. Feature Engineering Architecture (32 Features)
 - **Geographic / Spatial:** Haversine distance, distance ratio (`distance / haversine`), bearing angle (degrees), latitude/longitude deltas, midpoint coordinates.
